@@ -1,5 +1,5 @@
 {
-  "name": "egg-born",
+  "name": "@yuzedong/egg-born",
   "version": "1.7.0",
   "description": "The Ultimate Javascript Full Stack Framework",
   "preferGlobal": true,
