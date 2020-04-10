@@ -13,13 +13,13 @@ co(function* () {
 
   const options = {
     name: 'egg-born',
-    configName: 'egg-born-init-config',
+    configName: '@yuzedong/egg-born-init-config',
     pkgInfo: require('../package.json'),
   };
 
   const command = new Command(options);
 
-  command.printUsage = function() {
+  command.printUsage = function () {
     this.log(`usage:
       - cd ${this.targetDir}
       - npm install
@@ -55,7 +55,7 @@ co(function* () {
     // download test-party
     let testPartyDir;
     const pkg = require(path.join(templateDir, 'package.json'));
-    if (pkg.name === 'egg-born-template-cabloy') {
+    if (pkg.name === '@yuzedong/egg-born-template-cabloy') {
       // download
       testPartyDir = yield this.downloadModule('egg-born-module-test-party');
     }
@@ -76,8 +76,8 @@ co(function* () {
     }
   };
 
-  command.mergeDependencies = function(targetPathProject, sourcePathTest) {
-    const ignores = [ 'extend2', 'require3' ];
+  command.mergeDependencies = function (targetPathProject, sourcePathTest) {
+    const ignores = ['extend2', 'require3'];
     const targetPackageProject = require(targetPathProject);
     const sourcePackageTest = require(sourcePathTest);
     for (const item of ignores) {
