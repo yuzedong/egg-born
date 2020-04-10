@@ -2,7 +2,7 @@
 
 const os = require('os');
 const co = require('co');
-const Command = require('@zhennann/egg-init');
+const Command = require('@yuzedong/egg-init');
 const path = require('path');
 const fse = require('fs-extra');
 const rimraf = require('mz-modules/rimraf');
@@ -12,7 +12,7 @@ const randomize = require('randomatic');
 co(function* () {
 
   const options = {
-    name: 'egg-born',
+    name: '@yuzedong/egg-born',
     configName: '@yuzedong/egg-born-init-config',
     pkgInfo: require('../package.json'),
   };
