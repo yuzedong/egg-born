@@ -13,7 +13,7 @@ co(function* () {
 
   const options = {
     name: '@yuzedong/egg-born',
-    configName: '@yuzedong/egg-born-init-config',
+    configName: 'want-cms-init-config',
     pkgInfo: require('../package.json'),
   };
 
