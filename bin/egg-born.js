@@ -43,8 +43,8 @@ co(function* () {
     // publicDir
     locals.publicDir = path.join(require('os').homedir(), 'cabloy', locals.name).replace(/\\/gi, '/');
     // mysql
-    locals.mysqlRootPassword = randomize('*', 16, { exclude: '\\\'"' });
-    locals.mysqlUserPassword = randomize('*', 16, { exclude: '\\\'"' });
+    locals.mysqlRootPassword = randomize('*', 16, { exclude: '\\\'"$' });
+    locals.mysqlUserPassword = randomize('*', 16, { exclude: '\\\'"$' });
     locals.mysqlUserName = 'web_user';
     // ready
     return locals;
@@ -52,28 +52,54 @@ co(function* () {
 
   const processFiles = command.processFiles;
   command.processFiles = function* (targetDir, templateDir) {
-    // download test-party
-    let testPartyDir;
+    // download modules
+    let modules;
     const pkg = require(path.join(templateDir, 'package.json'));
     if (pkg.name === '@yuzedong/egg-born-template-cabloy') {
       // download
-      testPartyDir = yield this.downloadModule('egg-born-module-test-party');
+      modules = {};
+      for (const moduleName of ['test-party', 'test-partymonkey-monkey']) {
+        modules[moduleName] = yield this.__downloadCabloyModule(moduleName);
+      }
     }
     // process files
     yield processFiles.call(command, targetDir, templateDir);
-    // move test-party
-    if (testPartyDir) {
-      const destDir = path.join(targetDir, 'src/module');
-      // move
-      fse.moveSync(testPartyDir, path.join(destDir, 'test-party'));
-      // delete .gitkeep
-      fse.removeSync(path.join(destDir, '.gitkeep'));
-
-      // mergeDependencies
-      const targetPathProject = path.join(targetDir, 'package.json');
-      const sourcePathTest = path.join(destDir, 'test-party/package.json');
-      this.mergeDependencies(targetPathProject, sourcePathTest);
+    // move modules
+    if (modules) {
+      for (const moduleName in modules) {
+        this.__moveCabloyModule(moduleName, modules[moduleName], targetDir);
+      }
     }
+  };
+
+  command.__downloadCabloyModule = function* (moduleName) {
+    const pkgName = `egg-born-module-${moduleName}`;
+    const result = yield this.getPackageInfo(pkgName, false);
+    const tgzUrl = result.dist.tarball;
+
+    this.log(`downloading ${tgzUrl}`);
+
+    const saveDir = path.join(os.tmpdir(), pkgName);
+    yield rimraf(saveDir);
+
+    const response = yield this.curl(tgzUrl, { streaming: true, followRedirect: true });
+    yield compressing.tgz.uncompress(response.res, saveDir);
+
+    this.log(`extract to ${saveDir}`);
+    return path.join(saveDir, '/package');
+  };
+
+  command.__moveCabloyModule = function (moduleName, moduleSrcDir, targetDir) {
+    const destDir = path.join(targetDir, 'src/module');
+    // move
+    fse.moveSync(moduleSrcDir, path.join(destDir, moduleName));
+    // delete .gitkeep
+    fse.removeSync(path.join(destDir, '.gitkeep'));
+
+    // mergeDependencies
+    const targetPathProject = path.join(targetDir, 'package.json');
+    const sourcePathTest = path.join(destDir, `${moduleName}/package.json`);
+    this.mergeDependencies(targetPathProject, sourcePathTest);
   };
 
   command.mergeDependencies = function (targetPathProject, sourcePathTest) {
@@ -86,22 +112,6 @@ co(function* () {
     Object.assign(targetPackageProject.dependencies, sourcePackageTest.dependencies);
     // version save
     fse.outputFileSync(targetPathProject, JSON.stringify(targetPackageProject, null, 2) + '\n');
-  };
-
-  command.downloadModule = function* (pkgName) {
-    const result = yield this.getPackageInfo(pkgName, false);
-    const tgzUrl = result.dist.tarball;
-
-    this.log(`downloading ${tgzUrl}`);
-
-    const saveDir = path.join(os.tmpdir(), 'egg-born-module');
-    yield rimraf(saveDir);
-
-    const response = yield this.curl(tgzUrl, { streaming: true, followRedirect: true });
-    yield compressing.tgz.uncompress(response.res, saveDir);
-
-    this.log(`extract to ${saveDir}`);
-    return path.join(saveDir, '/package');
   };
 
   // run
